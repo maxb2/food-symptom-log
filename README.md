@@ -1,6 +1,7 @@
 # Food & Symptom Log
 
 An Android app for tracking meals, symptoms, medications, and bowel movements to help identify food sensitivities and patterns.
+Your privacy matters to us. Your data is stored on your device and never sent anywhere.
 
 ## Features
 
