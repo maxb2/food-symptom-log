@@ -1,13 +1,19 @@
 package com.foodsymptomlog.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.foodsymptomlog.data.AppDatabase
+import com.foodsymptomlog.data.export.DataExporter
+import com.foodsymptomlog.data.export.DataImporter
+import com.foodsymptomlog.data.export.ImportResult
 import com.foodsymptomlog.data.entity.BowelMovementEntry
 import com.foodsymptomlog.data.entity.MealEntry
 import com.foodsymptomlog.data.entity.MealType
 import com.foodsymptomlog.data.entity.MealWithDetails
+import com.foodsymptomlog.data.entity.MedicationEntry
+import com.foodsymptomlog.data.entity.OtherEntry
 import com.foodsymptomlog.data.entity.SymptomEntry
 import com.foodsymptomlog.data.entity.Tag
 import com.foodsymptomlog.data.repository.LogRepository
@@ -24,18 +30,25 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
     val allMeals: StateFlow<List<MealWithDetails>>
     val allSymptomEntries: StateFlow<List<SymptomEntry>>
     val allBowelMovements: StateFlow<List<BowelMovementEntry>>
+    val allMedications: StateFlow<List<MedicationEntry>>
+    val allOtherEntries: StateFlow<List<OtherEntry>>
     val ongoingSymptoms: StateFlow<List<SymptomEntry>>
     val recentMeals: StateFlow<List<MealWithDetails>>
     val recentSymptomEntries: StateFlow<List<SymptomEntry>>
     val recentBowelMovements: StateFlow<List<BowelMovementEntry>>
+    val recentMedications: StateFlow<List<MedicationEntry>>
+    val recentOtherEntries: StateFlow<List<OtherEntry>>
     val allTags: StateFlow<List<Tag>>
+    val allMedicationNames: StateFlow<List<String>>
 
     init {
         val database = AppDatabase.getDatabase(application)
         repository = LogRepository(
             database.mealDao(),
             database.symptomEntryDao(),
-            database.bowelMovementDao()
+            database.bowelMovementDao(),
+            database.medicationDao(),
+            database.otherEntryDao()
         )
 
         allMeals = repository.allMeals
@@ -45,6 +58,12 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
         allBowelMovements = repository.allBowelMovements
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+        allMedications = repository.allMedications
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+        allOtherEntries = repository.allOtherEntries
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
         ongoingSymptoms = repository.ongoingSymptoms
@@ -59,7 +78,16 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         recentBowelMovements = repository.getRecentBowelMovements(5)
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+        recentMedications = repository.getRecentMedications(5)
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+        recentOtherEntries = repository.getRecentOtherEntries(5)
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
         allTags = repository.allTags
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+        allMedicationNames = repository.allMedicationNames
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 
@@ -131,6 +159,51 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Medication methods
+    fun addMedication(
+        name: String,
+        dosage: String = "",
+        notes: String = "",
+        timestamp: Long = System.currentTimeMillis()
+    ) {
+        viewModelScope.launch {
+            repository.insertMedication(
+                MedicationEntry(name = name, dosage = dosage, notes = notes, timestamp = timestamp)
+            )
+        }
+    }
+
+    fun deleteMedication(entry: MedicationEntry) {
+        viewModelScope.launch {
+            repository.deleteMedication(entry)
+        }
+    }
+
+    fun updateMedication(entry: MedicationEntry) {
+        viewModelScope.launch {
+            repository.updateMedication(entry)
+        }
+    }
+
+    // Other entry methods
+    fun addOtherEntry(entry: OtherEntry) {
+        viewModelScope.launch {
+            repository.insertOtherEntry(entry)
+        }
+    }
+
+    fun deleteOtherEntry(entry: OtherEntry) {
+        viewModelScope.launch {
+            repository.deleteOtherEntry(entry)
+        }
+    }
+
+    fun updateOtherEntry(entry: OtherEntry) {
+        viewModelScope.launch {
+            repository.updateOtherEntry(entry)
+        }
+    }
+
     // Update methods
     fun updateSymptom(symptomEntry: SymptomEntry) {
         viewModelScope.launch {
@@ -164,6 +237,12 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
     private val _editingMeal = MutableStateFlow<MealWithDetails?>(null)
     val editingMeal: StateFlow<MealWithDetails?> = _editingMeal.asStateFlow()
 
+    private val _editingMedication = MutableStateFlow<MedicationEntry?>(null)
+    val editingMedication: StateFlow<MedicationEntry?> = _editingMedication.asStateFlow()
+
+    private val _editingOtherEntry = MutableStateFlow<OtherEntry?>(null)
+    val editingOtherEntry: StateFlow<OtherEntry?> = _editingOtherEntry.asStateFlow()
+
     fun loadSymptomForEditing(id: Long) {
         viewModelScope.launch {
             _editingSymptom.value = repository.getSymptomById(id)
@@ -182,9 +261,71 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun loadMedicationForEditing(id: Long) {
+        viewModelScope.launch {
+            _editingMedication.value = repository.getMedicationById(id)
+        }
+    }
+
+    fun loadOtherEntryForEditing(id: Long) {
+        viewModelScope.launch {
+            _editingOtherEntry.value = repository.getOtherEntryById(id)
+        }
+    }
+
     fun clearEditingState() {
         _editingSymptom.value = null
         _editingBowelMovement.value = null
         _editingMeal.value = null
+        _editingMedication.value = null
+        _editingOtherEntry.value = null
+    }
+
+    // Export/Import
+    fun exportData(uri: Uri, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val json = DataExporter.export(
+                    meals = allMeals.value,
+                    symptoms = allSymptomEntries.value,
+                    medications = allMedications.value,
+                    otherEntries = allOtherEntries.value
+                )
+                getApplication<Application>().contentResolver.openOutputStream(uri)?.use { stream ->
+                    stream.write(json.toByteArray())
+                }
+                val total = allMeals.value.size + allSymptomEntries.value.size +
+                    allMedications.value.size + allOtherEntries.value.size
+                onResult(true, "Exported $total entries successfully")
+            } catch (e: Exception) {
+                onResult(false, "Export failed: ${e.message}")
+            }
+        }
+    }
+
+    fun importData(uri: Uri, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val json = getApplication<Application>().contentResolver.openInputStream(uri)?.use { stream ->
+                    stream.bufferedReader().readText()
+                } ?: run {
+                    onResult(false, "Could not read file")
+                    return@launch
+                }
+
+                when (val result = DataImporter.import(json, repository)) {
+                    is ImportResult.Success -> {
+                        onResult(true, "Imported ${result.totalImported} entries: " +
+                            "${result.mealsImported} meals, ${result.symptomsImported} symptoms, " +
+                            "${result.medicationsImported} medications, ${result.otherEntriesImported} other")
+                    }
+                    is ImportResult.Error -> {
+                        onResult(false, result.message)
+                    }
+                }
+            } catch (e: Exception) {
+                onResult(false, "Import failed: ${e.message}")
+            }
+        }
     }
 }

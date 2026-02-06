@@ -2,11 +2,15 @@ package com.foodsymptomlog.data.repository
 
 import com.foodsymptomlog.data.dao.BowelMovementDao
 import com.foodsymptomlog.data.dao.MealDao
+import com.foodsymptomlog.data.dao.MedicationDao
+import com.foodsymptomlog.data.dao.OtherEntryDao
 import com.foodsymptomlog.data.dao.SymptomEntryDao
 import com.foodsymptomlog.data.entity.BowelMovementEntry
 import com.foodsymptomlog.data.entity.MealEntry
 import com.foodsymptomlog.data.entity.MealType
 import com.foodsymptomlog.data.entity.MealWithDetails
+import com.foodsymptomlog.data.entity.MedicationEntry
+import com.foodsymptomlog.data.entity.OtherEntry
 import com.foodsymptomlog.data.entity.SymptomEntry
 import com.foodsymptomlog.data.entity.Tag
 import kotlinx.coroutines.flow.Flow
@@ -14,13 +18,18 @@ import kotlinx.coroutines.flow.Flow
 class LogRepository(
     private val mealDao: MealDao,
     private val symptomEntryDao: SymptomEntryDao,
-    private val bowelMovementDao: BowelMovementDao
+    private val bowelMovementDao: BowelMovementDao,
+    private val medicationDao: MedicationDao,
+    private val otherEntryDao: OtherEntryDao
 ) {
     val allMeals: Flow<List<MealWithDetails>> = mealDao.getAllMealsWithDetails()
     val allSymptomEntries: Flow<List<SymptomEntry>> = symptomEntryDao.getAllSymptomEntries()
     val allBowelMovements: Flow<List<BowelMovementEntry>> = bowelMovementDao.getAllBowelMovements()
     val ongoingSymptoms: Flow<List<SymptomEntry>> = symptomEntryDao.getOngoingSymptoms()
     val allTags: Flow<List<Tag>> = mealDao.getAllTags()
+    val allMedications: Flow<List<MedicationEntry>> = medicationDao.getAllMedications()
+    val allMedicationNames: Flow<List<String>> = medicationDao.getAllMedicationNames()
+    val allOtherEntries: Flow<List<OtherEntry>> = otherEntryDao.getAllOtherEntries()
 
     fun getRecentMeals(limit: Int = 5): Flow<List<MealWithDetails>> {
         return mealDao.getRecentMealsWithDetails(limit)
@@ -32,6 +41,14 @@ class LogRepository(
 
     fun getRecentBowelMovements(limit: Int = 5): Flow<List<BowelMovementEntry>> {
         return bowelMovementDao.getRecentBowelMovements(limit)
+    }
+
+    fun getRecentMedications(limit: Int = 5): Flow<List<MedicationEntry>> {
+        return medicationDao.getRecentMedications(limit)
+    }
+
+    fun getRecentOtherEntries(limit: Int = 5): Flow<List<OtherEntry>> {
+        return otherEntryDao.getRecentOtherEntries(limit)
     }
 
     suspend fun insertMeal(
@@ -109,5 +126,39 @@ class LogRepository(
 
     suspend fun getMealWithDetailsById(id: Long): MealWithDetails? {
         return mealDao.getMealWithDetailsById(id)
+    }
+
+    // Medication methods
+    suspend fun insertMedication(entry: MedicationEntry): Long {
+        return medicationDao.insert(entry)
+    }
+
+    suspend fun updateMedication(entry: MedicationEntry) {
+        medicationDao.update(entry)
+    }
+
+    suspend fun deleteMedication(entry: MedicationEntry) {
+        medicationDao.delete(entry)
+    }
+
+    suspend fun getMedicationById(id: Long): MedicationEntry? {
+        return medicationDao.getById(id)
+    }
+
+    // Other entry methods
+    suspend fun insertOtherEntry(entry: OtherEntry): Long {
+        return otherEntryDao.insert(entry)
+    }
+
+    suspend fun updateOtherEntry(entry: OtherEntry) {
+        otherEntryDao.update(entry)
+    }
+
+    suspend fun deleteOtherEntry(entry: OtherEntry) {
+        otherEntryDao.delete(entry)
+    }
+
+    suspend fun getOtherEntryById(id: Long): OtherEntry? {
+        return otherEntryDao.getById(id)
     }
 }

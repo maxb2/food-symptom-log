@@ -13,6 +13,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.BrunchDining
 import androidx.compose.material.icons.filled.Cookie
 import androidx.compose.material.icons.filled.Delete
@@ -38,6 +42,8 @@ import com.foodsymptomlog.data.entity.BowelMovementEntry
 import com.foodsymptomlog.data.entity.BristolType
 import com.foodsymptomlog.data.entity.MealType
 import com.foodsymptomlog.data.entity.MealWithDetails
+import com.foodsymptomlog.data.entity.OtherEntry
+import com.foodsymptomlog.data.entity.OtherEntryType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -280,6 +286,155 @@ fun BowelMovementCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
                 )
+                if (entry.notes.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = entry.notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = formatTimestamp(entry.timestamp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.5f)
+                )
+            }
+            Column {
+                if (onEdit != null) {
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.6f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun OtherEntryCard(
+    entry: OtherEntry,
+    onDelete: () -> Unit,
+    onEdit: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val icon = when (entry.entryType) {
+        OtherEntryType.BOWEL_MOVEMENT -> Icons.Default.WaterDrop
+        OtherEntryType.SLEEP -> Icons.Default.Bedtime
+        OtherEntryType.EXERCISE -> Icons.Default.FitnessCenter
+        OtherEntryType.STRESS -> Icons.Default.Psychology
+        OtherEntryType.WATER_INTAKE -> Icons.Default.WaterDrop
+        OtherEntryType.OTHER -> Icons.Default.MoreHoriz
+    }
+
+    val title = when (entry.entryType) {
+        OtherEntryType.BOWEL_MOVEMENT -> "Bowel Movement"
+        OtherEntryType.SLEEP -> "Sleep"
+        OtherEntryType.EXERCISE -> "Exercise"
+        OtherEntryType.STRESS -> "Stress"
+        OtherEntryType.WATER_INTAKE -> "Water Intake"
+        OtherEntryType.OTHER -> entry.subType.ifBlank { "Other" }
+    }
+
+    val subtitle = when (entry.entryType) {
+        OtherEntryType.BOWEL_MOVEMENT -> {
+            val bristolType = entry.value.toIntOrNull()?.let { BristolType.fromInt(it) }
+            bristolType?.let { "Type ${it.type}: ${it.description}" } ?: ""
+        }
+        OtherEntryType.SLEEP -> buildString {
+            if (entry.value.isNotBlank()) append("${entry.value} hours")
+            if (entry.subType.isNotBlank()) {
+                if (isNotEmpty()) append(" - ")
+                append(entry.subType)
+            }
+        }
+        OtherEntryType.EXERCISE -> buildString {
+            if (entry.subType.isNotBlank()) append(entry.subType)
+            if (entry.value.isNotBlank()) {
+                if (isNotEmpty()) append(" - ")
+                append(entry.value)
+            }
+        }
+        OtherEntryType.STRESS -> buildString {
+            if (entry.value.isNotBlank()) append("Level: ${entry.value}")
+            if (entry.subType.isNotBlank()) {
+                if (isNotEmpty()) append(" - ")
+                append(entry.subType)
+            }
+        }
+        OtherEntryType.WATER_INTAKE -> entry.value
+        OtherEntryType.OTHER -> entry.value
+    }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            if (entry.entryType == OtherEntryType.BOWEL_MOVEMENT) {
+                val bristolValue = entry.value.toIntOrNull() ?: 4
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Text(
+                        text = bristolValue.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = getBristolColor(bristolValue)
+                    )
+                }
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (entry.entryType == OtherEntryType.BOWEL_MOVEMENT) {
+                        val bristolValue = entry.value.toIntOrNull() ?: 4
+                        BristolIndicator(type = bristolValue)
+                    }
+                }
+                if (subtitle.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                    )
+                }
                 if (entry.notes.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(

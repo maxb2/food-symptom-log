@@ -13,10 +13,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -34,11 +36,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.foodsymptomlog.data.entity.BowelMovementEntry
 import com.foodsymptomlog.data.entity.MealWithDetails
+import com.foodsymptomlog.data.entity.MedicationEntry
+import com.foodsymptomlog.data.entity.OtherEntry
 import com.foodsymptomlog.data.entity.SymptomEntry
-import com.foodsymptomlog.ui.components.BowelMovementCard
 import com.foodsymptomlog.ui.components.MealEntryCard
+import com.foodsymptomlog.ui.components.MedicationCard
+import com.foodsymptomlog.ui.components.OtherEntryCard
 import com.foodsymptomlog.ui.components.SymptomEntryCard
 import com.foodsymptomlog.viewmodel.LogViewModel
 
@@ -48,15 +52,20 @@ fun HomeScreen(
     viewModel: LogViewModel,
     onAddMeal: () -> Unit,
     onAddSymptom: () -> Unit,
-    onAddBowelMovement: () -> Unit,
+    onAddOther: () -> Unit,
+    onAddMedication: () -> Unit = {},
     onViewHistory: () -> Unit,
+    onViewCalendar: () -> Unit = {},
+    onViewSettings: () -> Unit = {},
     onEditMeal: (Long) -> Unit = {},
     onEditSymptom: (Long) -> Unit = {},
-    onEditBowelMovement: (Long) -> Unit = {}
+    onEditOther: (Long) -> Unit = {},
+    onEditMedication: (Long) -> Unit = {}
 ) {
     val recentMeals by viewModel.recentMeals.collectAsState()
     val recentSymptoms by viewModel.recentSymptomEntries.collectAsState()
-    val recentBowelMovements by viewModel.recentBowelMovements.collectAsState()
+    val recentMedications by viewModel.recentMedications.collectAsState()
+    val recentOtherEntries by viewModel.recentOtherEntries.collectAsState()
 
     Scaffold(
         topBar = {
@@ -68,10 +77,22 @@ fun HomeScreen(
                     )
                 },
                 actions = {
+                    IconButton(onClick = onViewCalendar) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = "Calendar"
+                        )
+                    }
                     IconButton(onClick = onViewHistory) {
                         Icon(
                             imageVector = Icons.Default.History,
                             contentDescription = "History"
+                        )
+                    }
+                    IconButton(onClick = onViewSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
                         )
                     }
                 },
@@ -125,20 +146,39 @@ fun HomeScreen(
                 }
 
                 Button(
-                    onClick = onAddBowelMovement,
+                    onClick = onAddOther,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.tertiary
                     )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.WaterDrop,
+                        imageVector = Icons.Default.Add,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.padding(4.dp))
-                    Text("BM")
+                    Text("Other")
                 }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Second row: Medication
+            Button(
+                onClick = onAddMedication,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiary
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Medication,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.padding(4.dp))
+                Text("Medication")
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -151,7 +191,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (recentMeals.isEmpty() && recentSymptoms.isEmpty() && recentBowelMovements.isEmpty()) {
+            if (recentMeals.isEmpty() && recentSymptoms.isEmpty() && recentMedications.isEmpty() && recentOtherEntries.isEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -179,13 +219,15 @@ fun HomeScreen(
                 val combinedEntries = (
                     recentMeals.map { EntryItem.Meal(it) } +
                     recentSymptoms.map { EntryItem.Symptom(it) } +
-                    recentBowelMovements.map { EntryItem.BowelMovement(it) }
+                    recentMedications.map { EntryItem.Medication(it) } +
+                    recentOtherEntries.map { EntryItem.Other(it) }
                 )
                     .sortedByDescending {
                         when (it) {
                             is EntryItem.Meal -> it.entry.meal.timestamp
                             is EntryItem.Symptom -> it.entry.timestamp
-                            is EntryItem.BowelMovement -> it.entry.timestamp
+                            is EntryItem.Medication -> it.entry.timestamp
+                            is EntryItem.Other -> it.entry.timestamp
                         }
                     }
                     .take(10)
@@ -209,10 +251,15 @@ fun HomeScreen(
                                 onDelete = { viewModel.deleteSymptom(item.entry) },
                                 onEdit = { onEditSymptom(item.entry.id) }
                             )
-                            is EntryItem.BowelMovement -> BowelMovementCard(
+                            is EntryItem.Other -> OtherEntryCard(
                                 entry = item.entry,
-                                onDelete = { viewModel.deleteBowelMovement(item.entry) },
-                                onEdit = { onEditBowelMovement(item.entry.id) }
+                                onDelete = { viewModel.deleteOtherEntry(item.entry) },
+                                onEdit = { onEditOther(item.entry.id) }
+                            )
+                            is EntryItem.Medication -> MedicationCard(
+                                entry = item.entry,
+                                onDelete = { viewModel.deleteMedication(item.entry) },
+                                onEdit = { onEditMedication(item.entry.id) }
                             )
                         }
                     }
@@ -225,5 +272,6 @@ fun HomeScreen(
 private sealed class EntryItem {
     data class Meal(val entry: MealWithDetails) : EntryItem()
     data class Symptom(val entry: SymptomEntry) : EntryItem()
-    data class BowelMovement(val entry: BowelMovementEntry) : EntryItem()
+    data class Medication(val entry: MedicationEntry) : EntryItem()
+    data class Other(val entry: OtherEntry) : EntryItem()
 }

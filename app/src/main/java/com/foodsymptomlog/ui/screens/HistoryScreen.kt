@@ -29,16 +29,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.foodsymptomlog.data.entity.BowelMovementEntry
 import com.foodsymptomlog.data.entity.MealWithDetails
+import com.foodsymptomlog.data.entity.MedicationEntry
+import com.foodsymptomlog.data.entity.OtherEntry
 import com.foodsymptomlog.data.entity.SymptomEntry
-import com.foodsymptomlog.ui.components.BowelMovementCard
 import com.foodsymptomlog.ui.components.MealEntryCard
+import com.foodsymptomlog.ui.components.MedicationCard
+import com.foodsymptomlog.ui.components.OtherEntryCard
 import com.foodsymptomlog.ui.components.SymptomEntryCard
 import com.foodsymptomlog.viewmodel.LogViewModel
 
 enum class FilterType {
-    ALL, MEALS, SYMPTOMS, BOWEL_MOVEMENTS
+    ALL, MEALS, SYMPTOMS, OTHER, MEDICATIONS
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,11 +50,13 @@ fun HistoryScreen(
     onNavigateBack: () -> Unit,
     onEditMeal: (Long) -> Unit = {},
     onEditSymptom: (Long) -> Unit = {},
-    onEditBowelMovement: (Long) -> Unit = {}
+    onEditOther: (Long) -> Unit = {},
+    onEditMedication: (Long) -> Unit = {}
 ) {
     val allMeals by viewModel.allMeals.collectAsState()
     val allSymptoms by viewModel.allSymptomEntries.collectAsState()
-    val allBowelMovements by viewModel.allBowelMovements.collectAsState()
+    val allMedications by viewModel.allMedications.collectAsState()
+    val allOtherEntries by viewModel.allOtherEntries.collectAsState()
     var filterType by remember { mutableStateOf(FilterType.ALL) }
 
     Scaffold(
@@ -104,9 +108,14 @@ fun HistoryScreen(
                     label = { Text("Symptoms") }
                 )
                 FilterChip(
-                    selected = filterType == FilterType.BOWEL_MOVEMENTS,
-                    onClick = { filterType = FilterType.BOWEL_MOVEMENTS },
-                    label = { Text("BM") }
+                    selected = filterType == FilterType.OTHER,
+                    onClick = { filterType = FilterType.OTHER },
+                    label = { Text("Other") }
+                )
+                FilterChip(
+                    selected = filterType == FilterType.MEDICATIONS,
+                    onClick = { filterType = FilterType.MEDICATIONS },
+                    label = { Text("Meds") }
                 )
             }
 
@@ -114,14 +123,17 @@ fun HistoryScreen(
                 FilterType.ALL -> {
                     (allMeals.map { HistoryEntry.Meal(it) } +
                             allSymptoms.map { HistoryEntry.Symptom(it) } +
-                            allBowelMovements.map { HistoryEntry.BowelMovement(it) })
+                            allMedications.map { HistoryEntry.Medication(it) } +
+                            allOtherEntries.map { HistoryEntry.Other(it) })
                         .sortedByDescending { it.timestamp }
                 }
                 FilterType.MEALS -> allMeals.map { HistoryEntry.Meal(it) }
                     .sortedByDescending { it.timestamp }
                 FilterType.SYMPTOMS -> allSymptoms.map { HistoryEntry.Symptom(it) }
                     .sortedByDescending { it.timestamp }
-                FilterType.BOWEL_MOVEMENTS -> allBowelMovements.map { HistoryEntry.BowelMovement(it) }
+                FilterType.OTHER -> allOtherEntries.map { HistoryEntry.Other(it) }
+                    .sortedByDescending { it.timestamp }
+                FilterType.MEDICATIONS -> allMedications.map { HistoryEntry.Medication(it) }
                     .sortedByDescending { it.timestamp }
             }
 
@@ -159,10 +171,15 @@ fun HistoryScreen(
                                 onDelete = { viewModel.deleteSymptom(entry.entry) },
                                 onEdit = { onEditSymptom(entry.entry.id) }
                             )
-                            is HistoryEntry.BowelMovement -> BowelMovementCard(
+                            is HistoryEntry.Other -> OtherEntryCard(
                                 entry = entry.entry,
-                                onDelete = { viewModel.deleteBowelMovement(entry.entry) },
-                                onEdit = { onEditBowelMovement(entry.entry.id) }
+                                onDelete = { viewModel.deleteOtherEntry(entry.entry) },
+                                onEdit = { onEditOther(entry.entry.id) }
+                            )
+                            is HistoryEntry.Medication -> MedicationCard(
+                                entry = entry.entry,
+                                onDelete = { viewModel.deleteMedication(entry.entry) },
+                                onEdit = { onEditMedication(entry.entry.id) }
                             )
                         }
                     }
@@ -183,7 +200,11 @@ private sealed class HistoryEntry {
         override val timestamp: Long = entry.timestamp
     }
 
-    data class BowelMovement(val entry: BowelMovementEntry) : HistoryEntry() {
+    data class Other(val entry: OtherEntry) : HistoryEntry() {
+        override val timestamp: Long = entry.timestamp
+    }
+
+    data class Medication(val entry: MedicationEntry) : HistoryEntry() {
         override val timestamp: Long = entry.timestamp
     }
 }

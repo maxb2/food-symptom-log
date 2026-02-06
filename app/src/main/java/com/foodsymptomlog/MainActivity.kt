@@ -13,11 +13,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.foodsymptomlog.ui.screens.AddBowelMovementScreen
 import com.foodsymptomlog.ui.screens.AddMealScreen
+import com.foodsymptomlog.ui.screens.AddMedicationScreen
+import com.foodsymptomlog.ui.screens.AddOtherEntryScreen
 import com.foodsymptomlog.ui.screens.AddSymptomScreen
+import com.foodsymptomlog.ui.screens.CalendarScreen
 import com.foodsymptomlog.ui.screens.HistoryScreen
 import com.foodsymptomlog.ui.screens.HomeScreen
+import com.foodsymptomlog.ui.screens.SettingsScreen
 import com.foodsymptomlog.ui.theme.FoodSymptomLogTheme
 import com.foodsymptomlog.viewmodel.LogViewModel
 
@@ -42,11 +45,15 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 onAddMeal = { navController.navigate("add_meal") },
                                 onAddSymptom = { navController.navigate("add_symptom") },
-                                onAddBowelMovement = { navController.navigate("add_bowel_movement") },
+                                onAddOther = { navController.navigate("add_other") },
+                                onAddMedication = { navController.navigate("add_medication") },
                                 onViewHistory = { navController.navigate("history") },
+                                onViewCalendar = { navController.navigate("calendar") },
+                                onViewSettings = { navController.navigate("settings") },
                                 onEditMeal = { id -> navController.navigate("edit_meal/$id") },
                                 onEditSymptom = { id -> navController.navigate("edit_symptom/$id") },
-                                onEditBowelMovement = { id -> navController.navigate("edit_bowel_movement/$id") }
+                                onEditOther = { id -> navController.navigate("edit_other/$id") },
+                                onEditMedication = { id -> navController.navigate("edit_medication/$id") }
                             )
                         }
                         composable("add_meal") {
@@ -61,10 +68,32 @@ class MainActivity : ComponentActivity() {
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
-                        composable("add_bowel_movement") {
-                            AddBowelMovementScreen(
+                        composable("add_other") {
+                            AddOtherEntryScreen(
                                 viewModel = viewModel,
                                 onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("add_medication") {
+                            AddMedicationScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("settings") {
+                            SettingsScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("calendar") {
+                            CalendarScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onEditMeal = { id -> navController.navigate("edit_meal/$id") },
+                                onEditSymptom = { id -> navController.navigate("edit_symptom/$id") },
+                                onEditOther = { id -> navController.navigate("edit_other/$id") },
+                                onEditMedication = { id -> navController.navigate("edit_medication/$id") }
                             )
                         }
                         composable("history") {
@@ -73,7 +102,8 @@ class MainActivity : ComponentActivity() {
                                 onNavigateBack = { navController.popBackStack() },
                                 onEditMeal = { id -> navController.navigate("edit_meal/$id") },
                                 onEditSymptom = { id -> navController.navigate("edit_symptom/$id") },
-                                onEditBowelMovement = { id -> navController.navigate("edit_bowel_movement/$id") }
+                                onEditOther = { id -> navController.navigate("edit_other/$id") },
+                                onEditMedication = { id -> navController.navigate("edit_medication/$id") }
                             )
                         }
                         // Edit routes
@@ -100,14 +130,25 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(
-                            route = "edit_bowel_movement/{bowelMovementId}",
-                            arguments = listOf(navArgument("bowelMovementId") { type = NavType.LongType })
+                            route = "edit_other/{otherEntryId}",
+                            arguments = listOf(navArgument("otherEntryId") { type = NavType.LongType })
                         ) { backStackEntry ->
-                            val bowelMovementId = backStackEntry.arguments?.getLong("bowelMovementId")
-                            AddBowelMovementScreen(
+                            val otherEntryId = backStackEntry.arguments?.getLong("otherEntryId")
+                            AddOtherEntryScreen(
                                 viewModel = viewModel,
                                 onNavigateBack = { navController.popBackStack() },
-                                editId = bowelMovementId
+                                editId = otherEntryId
+                            )
+                        }
+                        composable(
+                            route = "edit_medication/{medicationId}",
+                            arguments = listOf(navArgument("medicationId") { type = NavType.LongType })
+                        ) { backStackEntry ->
+                            val medicationId = backStackEntry.arguments?.getLong("medicationId")
+                            AddMedicationScreen(
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                editId = medicationId
                             )
                         }
                     }

@@ -6,11 +6,15 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.foodsymptomlog.data.dao.BowelMovementDao
 import com.foodsymptomlog.data.dao.MealDao
+import com.foodsymptomlog.data.dao.MedicationDao
+import com.foodsymptomlog.data.dao.OtherEntryDao
 import com.foodsymptomlog.data.dao.SymptomEntryDao
 import com.foodsymptomlog.data.entity.BowelMovementEntry
 import com.foodsymptomlog.data.entity.FoodItem
 import com.foodsymptomlog.data.entity.MealEntry
 import com.foodsymptomlog.data.entity.MealTagCrossRef
+import com.foodsymptomlog.data.entity.MedicationEntry
+import com.foodsymptomlog.data.entity.OtherEntry
 import com.foodsymptomlog.data.entity.SymptomEntry
 import com.foodsymptomlog.data.entity.Tag
 
@@ -21,15 +25,19 @@ import com.foodsymptomlog.data.entity.Tag
         Tag::class,
         MealTagCrossRef::class,
         SymptomEntry::class,
-        BowelMovementEntry::class
+        BowelMovementEntry::class,
+        MedicationEntry::class,
+        OtherEntry::class
     ],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun mealDao(): MealDao
     abstract fun symptomEntryDao(): SymptomEntryDao
     abstract fun bowelMovementDao(): BowelMovementDao
+    abstract fun medicationDao(): MedicationDao
+    abstract fun otherEntryDao(): OtherEntryDao
 
     companion object {
         @Volatile
