@@ -3,6 +3,8 @@ package com.privatehealthjournal.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -68,7 +70,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     viewModel: LogViewModel,
@@ -143,15 +145,15 @@ fun HomeScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // First row: Meal, Symptom, Medication
-            Row(
+            // Action buttons - flow to fit screen width
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Meal button
                 Button(
                     onClick = { onAddMeal() },
-                    modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
@@ -168,7 +170,6 @@ fun HomeScreen(
                 // Symptom button
                 Button(
                     onClick = { onAddSymptom(null) },
-                    modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     )
@@ -185,7 +186,6 @@ fun HomeScreen(
                 // Medication button
                 Button(
                     onClick = { onAddMedication(null) },
-                    modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.tertiary
                     )
@@ -198,20 +198,11 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Meds")
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Second row: Biometrics and Other
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
                 // Biometrics dropdown
-                Box(modifier = Modifier.weight(1f)) {
+                Box {
                     Button(
                         onClick = { biometricsMenuExpanded = true },
-                        modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                         )
@@ -272,10 +263,9 @@ fun HomeScreen(
                 }
 
                 // Other dropdown
-                Box(modifier = Modifier.weight(1f)) {
+                Box {
                     Button(
                         onClick = { otherMenuExpanded = true },
-                        modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.outline
                         )
