@@ -49,23 +49,31 @@ The `LogViewModel` holds all state as `StateFlow` objects and exposes CRUD metho
 - **SymptomEntry** - Symptoms with name, severity (1-5), startTime, endTime (nullable for ongoing)
 - **BowelMovementEntry** - Bristol scale type (1-7)
 - **MedicationEntry** - Medication name, dosage
-- **OtherEntry** - Generic entries for anything else
+- **OtherEntry** - Generic entries with typed variants: bowel movement, sleep, exercise, stress, mood, water intake, other. Mood stores a numeric level (1-10) in `value` and a description in `subType` with autocomplete from previously entered values.
+- **MedicationSet** - Named group of medications (`MedicationSetItem`s) for batch logging. Logging a set creates a `MedicationSetLog` and individual `MedicationEntry` records.
+- **MedicationSetReminder** - Per-set scheduled reminders with `hour`, `minute`, `daysOfWeek` (bitmask), `enabled`. Fires notifications via `AlarmManager`; suppressed if the set was already logged today.
 - **Biometrics** - BloodPressureEntry, CholesterolEntry, WeightEntry, SpO2Entry, BloodGlucoseEntry
 
 ### Navigation
 Routes defined in `MainActivity.kt` using string-based navigation:
 - `home`, `history`, `calendar`, `settings`
-- `add_meal`, `add_symptom`, `add_medication`, `add_other`
+- `add_meal`, `add_symptom`, `add_medication`, `add_other`, `add_other?type={TYPE}`
 - `edit_meal/{id}`, `edit_symptom/{id}`, etc.
+- `medication_sets` (manage sets and reminders)
 
 ### Database
-Room database at version 9 using `fallbackToDestructiveMigration()` (no migration support yet). Entity changes require version bump.
+Room database at version 11 using `fallbackToDestructiveMigration()` (no migration support yet). Entity changes require version bump.
 
 ### Color Coding Convention
 Entry cards use Material 3 container colors to distinguish types:
 - Meals: `primaryContainer`
 - Symptoms: `secondaryContainer`
 - Bowel Movements: `tertiaryContainer`
+
+### Notifications & Reminders
+Medication set reminders use `AlarmManager.setExactAndAllowWhileIdle()` scheduled via `notification/ReminderScheduler.kt`. Alarms are received by `notification/ReminderBroadcastReceiver.kt`, which also reschedules all reminders on `BOOT_COMPLETED`. Notification channel `"medication_reminders"` is created in `MainActivity.onCreate()`. Days-of-week use a bitmask (`DaysOfWeek` object in `MedicationSetReminder.kt`).
+
+Manifest permissions: `USE_EXACT_ALARM`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`.
 
 ### Export/Import
 JSON export/import functionality in `data/export/` for backing up and restoring data.
