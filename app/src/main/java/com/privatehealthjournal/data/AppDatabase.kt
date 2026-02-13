@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.privatehealthjournal.data.dao.BloodGlucoseDao
 import com.privatehealthjournal.data.dao.BloodPressureDao
 import com.privatehealthjournal.data.dao.BowelMovementDao
 import com.privatehealthjournal.data.dao.CholesterolDao
@@ -13,6 +14,7 @@ import com.privatehealthjournal.data.dao.OtherEntryDao
 import com.privatehealthjournal.data.dao.SpO2Dao
 import com.privatehealthjournal.data.dao.SymptomEntryDao
 import com.privatehealthjournal.data.dao.WeightDao
+import com.privatehealthjournal.data.entity.BloodGlucoseEntry
 import com.privatehealthjournal.data.entity.BloodPressureEntry
 import com.privatehealthjournal.data.entity.BowelMovementEntry
 import com.privatehealthjournal.data.entity.CholesterolEntry
@@ -39,9 +41,10 @@ import com.privatehealthjournal.data.entity.WeightEntry
         BloodPressureEntry::class,
         CholesterolEntry::class,
         WeightEntry::class,
-        SpO2Entry::class
+        SpO2Entry::class,
+        BloodGlucoseEntry::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -54,6 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun cholesterolDao(): CholesterolDao
     abstract fun weightDao(): WeightDao
     abstract fun spO2Dao(): SpO2Dao
+    abstract fun bloodGlucoseDao(): BloodGlucoseDao
 
     companion object {
         @Volatile

@@ -8,6 +8,7 @@ import com.privatehealthjournal.data.AppDatabase
 import com.privatehealthjournal.data.export.DataExporter
 import com.privatehealthjournal.data.export.DataImporter
 import com.privatehealthjournal.data.export.ImportResult
+import com.privatehealthjournal.data.entity.BloodGlucoseEntry
 import com.privatehealthjournal.data.entity.BloodPressureEntry
 import com.privatehealthjournal.data.entity.BowelMovementEntry
 import com.privatehealthjournal.data.entity.CholesterolEntry
@@ -16,6 +17,8 @@ import com.privatehealthjournal.data.entity.MealType
 import com.privatehealthjournal.data.entity.MealWithDetails
 import com.privatehealthjournal.data.entity.MedicationEntry
 import com.privatehealthjournal.data.entity.OtherEntry
+import com.privatehealthjournal.data.entity.GlucoseMealContext
+import com.privatehealthjournal.data.entity.GlucoseUnit
 import com.privatehealthjournal.data.entity.SpO2Entry
 import com.privatehealthjournal.data.entity.SymptomEntry
 import com.privatehealthjournal.data.entity.Tag
@@ -41,6 +44,7 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
     val allCholesterolEntries: StateFlow<List<CholesterolEntry>>
     val allWeightEntries: StateFlow<List<WeightEntry>>
     val allSpO2Entries: StateFlow<List<SpO2Entry>>
+    val allBloodGlucoseEntries: StateFlow<List<BloodGlucoseEntry>>
     val ongoingSymptoms: StateFlow<List<SymptomEntry>>
     val recentMeals: StateFlow<List<MealWithDetails>>
     val recentSymptomEntries: StateFlow<List<SymptomEntry>>
@@ -51,6 +55,7 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
     val recentCholesterolEntries: StateFlow<List<CholesterolEntry>>
     val recentWeightEntries: StateFlow<List<WeightEntry>>
     val recentSpO2Entries: StateFlow<List<SpO2Entry>>
+    val recentBloodGlucoseEntries: StateFlow<List<BloodGlucoseEntry>>
     val allTags: StateFlow<List<Tag>>
     val allMedicationNames: StateFlow<List<String>>
 
@@ -65,7 +70,8 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
             database.bloodPressureDao(),
             database.cholesterolDao(),
             database.weightDao(),
-            database.spO2Dao()
+            database.spO2Dao(),
+            database.bloodGlucoseDao()
         )
 
         allMeals = repository.allMeals
@@ -93,6 +99,9 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
         allSpO2Entries = repository.allSpO2Entries
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+        allBloodGlucoseEntries = repository.allBloodGlucoseEntries
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
         ongoingSymptoms = repository.ongoingSymptoms
@@ -123,6 +132,9 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
         recentSpO2Entries = repository.getRecentSpO2Entries(5)
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+        recentBloodGlucoseEntries = repository.getRecentBloodGlucoseEntries(5)
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
         allTags = repository.allTags
@@ -375,6 +387,39 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Blood Glucose methods
+    fun addBloodGlucose(
+        glucoseLevel: Double,
+        unit: GlucoseUnit = GlucoseUnit.MG_DL,
+        mealContext: GlucoseMealContext? = null,
+        notes: String = "",
+        timestamp: Long = System.currentTimeMillis()
+    ) {
+        viewModelScope.launch {
+            repository.insertBloodGlucose(
+                BloodGlucoseEntry(
+                    glucoseLevel = glucoseLevel,
+                    unit = unit,
+                    mealContext = mealContext,
+                    notes = notes,
+                    timestamp = timestamp
+                )
+            )
+        }
+    }
+
+    fun updateBloodGlucose(entry: BloodGlucoseEntry) {
+        viewModelScope.launch {
+            repository.updateBloodGlucose(entry)
+        }
+    }
+
+    fun deleteBloodGlucose(entry: BloodGlucoseEntry) {
+        viewModelScope.launch {
+            repository.deleteBloodGlucose(entry)
+        }
+    }
+
     // Update methods
     fun updateSymptom(symptomEntry: SymptomEntry) {
         viewModelScope.launch {
@@ -425,6 +470,9 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _editingSpO2 = MutableStateFlow<SpO2Entry?>(null)
     val editingSpO2: StateFlow<SpO2Entry?> = _editingSpO2.asStateFlow()
+
+    private val _editingBloodGlucose = MutableStateFlow<BloodGlucoseEntry?>(null)
+    val editingBloodGlucose: StateFlow<BloodGlucoseEntry?> = _editingBloodGlucose.asStateFlow()
 
     fun loadSymptomForEditing(id: Long) {
         viewModelScope.launch {
@@ -480,6 +528,12 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun loadBloodGlucoseForEditing(id: Long) {
+        viewModelScope.launch {
+            _editingBloodGlucose.value = repository.getBloodGlucoseById(id)
+        }
+    }
+
     fun clearEditingState() {
         _editingSymptom.value = null
         _editingBowelMovement.value = null
@@ -490,6 +544,7 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         _editingCholesterol.value = null
         _editingWeight.value = null
         _editingSpO2.value = null
+        _editingBloodGlucose.value = null
     }
 
     // Export/Import
@@ -504,7 +559,8 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
                     bloodPressureEntries = allBloodPressureEntries.value,
                     cholesterolEntries = allCholesterolEntries.value,
                     weightEntries = allWeightEntries.value,
-                    spO2Entries = allSpO2Entries.value
+                    spO2Entries = allSpO2Entries.value,
+                    bloodGlucoseEntries = allBloodGlucoseEntries.value
                 )
                 getApplication<Application>().contentResolver.openOutputStream(uri)?.use { stream ->
                     stream.write(json.toByteArray())
@@ -512,7 +568,8 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
                 val total = allMeals.value.size + allSymptomEntries.value.size +
                     allMedications.value.size + allOtherEntries.value.size +
                     allBloodPressureEntries.value.size + allCholesterolEntries.value.size +
-                    allWeightEntries.value.size + allSpO2Entries.value.size
+                    allWeightEntries.value.size + allSpO2Entries.value.size +
+                    allBloodGlucoseEntries.value.size
                 onResult(true, "Exported $total entries successfully")
             } catch (e: Exception) {
                 onResult(false, "Export failed: ${e.message}")

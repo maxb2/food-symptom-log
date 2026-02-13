@@ -55,9 +55,11 @@ import com.privatehealthjournal.data.entity.CholesterolEntry
 import com.privatehealthjournal.data.entity.MealWithDetails
 import com.privatehealthjournal.data.entity.MedicationEntry
 import com.privatehealthjournal.data.entity.OtherEntry
+import com.privatehealthjournal.data.entity.BloodGlucoseEntry
 import com.privatehealthjournal.data.entity.SpO2Entry
 import com.privatehealthjournal.data.entity.SymptomEntry
 import com.privatehealthjournal.data.entity.WeightEntry
+import com.privatehealthjournal.ui.components.BloodGlucoseCard
 import com.privatehealthjournal.ui.components.BloodPressureCard
 import com.privatehealthjournal.ui.components.CholesterolCard
 import com.privatehealthjournal.ui.components.MealEntryCard
@@ -84,6 +86,7 @@ fun HomeScreen(
     onAddCholesterol: () -> Unit,
     onAddWeight: () -> Unit,
     onAddSpO2: () -> Unit,
+    onAddBloodGlucose: () -> Unit,
     onViewBiometricsChart: () -> Unit = {},
     onViewHistory: () -> Unit,
     onViewCalendar: () -> Unit = {},
@@ -95,7 +98,8 @@ fun HomeScreen(
     onEditBloodPressure: (Long) -> Unit = {},
     onEditCholesterol: (Long) -> Unit = {},
     onEditWeight: (Long) -> Unit = {},
-    onEditSpO2: (Long) -> Unit = {}
+    onEditSpO2: (Long) -> Unit = {},
+    onEditBloodGlucose: (Long) -> Unit = {}
 ) {
     val recentMeals by viewModel.recentMeals.collectAsState()
     val recentSymptoms by viewModel.recentSymptomEntries.collectAsState()
@@ -105,6 +109,7 @@ fun HomeScreen(
     val recentCholesterol by viewModel.recentCholesterolEntries.collectAsState()
     val recentWeight by viewModel.recentWeightEntries.collectAsState()
     val recentSpO2 by viewModel.recentSpO2Entries.collectAsState()
+    val recentBloodGlucose by viewModel.recentBloodGlucoseEntries.collectAsState()
 
     var biometricsMenuExpanded by remember { mutableStateOf(false) }
     var otherMenuExpanded by remember { mutableStateOf(false) }
@@ -257,6 +262,13 @@ fun HomeScreen(
                                 onAddSpO2()
                             }
                         )
+                        DropdownMenuItem(
+                            text = { Text("Blood Glucose") },
+                            onClick = {
+                                biometricsMenuExpanded = false
+                                onAddBloodGlucose()
+                            }
+                        )
                         Divider()
                         DropdownMenuItem(
                             text = { Text("View Charts") },
@@ -358,7 +370,8 @@ fun HomeScreen(
             val allEmpty = recentMeals.isEmpty() && recentSymptoms.isEmpty() &&
                 recentMedications.isEmpty() && recentOtherEntries.isEmpty() &&
                 recentBloodPressure.isEmpty() && recentCholesterol.isEmpty() &&
-                recentWeight.isEmpty() && recentSpO2.isEmpty()
+                recentWeight.isEmpty() && recentSpO2.isEmpty() &&
+                recentBloodGlucose.isEmpty()
 
             if (allEmpty) {
                 Column(
@@ -393,7 +406,8 @@ fun HomeScreen(
                     recentBloodPressure.map { EntryItem.BloodPressure(it) } +
                     recentCholesterol.map { EntryItem.Cholesterol(it) } +
                     recentWeight.map { EntryItem.Weight(it) } +
-                    recentSpO2.map { EntryItem.SpO2(it) }
+                    recentSpO2.map { EntryItem.SpO2(it) } +
+                    recentBloodGlucose.map { EntryItem.BloodGlucose(it) }
                 )
                     .sortedByDescending { it.timestamp }
                     .take(10)
@@ -485,6 +499,11 @@ fun HomeScreen(
                                     onDelete = { viewModel.deleteSpO2(item.entry) },
                                     onEdit = { onEditSpO2(item.entry.id) }
                                 )
+                                is EntryItem.BloodGlucose -> BloodGlucoseCard(
+                                    entry = item.entry,
+                                    onDelete = { viewModel.deleteBloodGlucose(item.entry) },
+                                    onEdit = { onEditBloodGlucose(item.entry.id) }
+                                )
                             }
                         }
                     }
@@ -519,6 +538,9 @@ private sealed class EntryItem {
         override val timestamp: Long = entry.timestamp
     }
     data class SpO2(val entry: SpO2Entry) : EntryItem() {
+        override val timestamp: Long = entry.timestamp
+    }
+    data class BloodGlucose(val entry: BloodGlucoseEntry) : EntryItem() {
         override val timestamp: Long = entry.timestamp
     }
 }

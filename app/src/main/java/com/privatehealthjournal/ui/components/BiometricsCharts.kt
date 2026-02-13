@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.privatehealthjournal.data.entity.BloodPressureEntry
 import com.privatehealthjournal.data.entity.CholesterolEntry
+import com.privatehealthjournal.data.entity.BloodGlucoseEntry
+import com.privatehealthjournal.data.entity.GlucoseUnit
 import com.privatehealthjournal.data.entity.SpO2Entry
 import com.privatehealthjournal.data.entity.WeightEntry
 import com.privatehealthjournal.data.entity.WeightUnit
@@ -432,6 +434,121 @@ fun SpO2Chart(
         modifier = modifier
             .fillMaxWidth()
             .height(200.dp)
+    )
+}
+
+@Composable
+fun BloodGlucoseChart(
+    entries: List<BloodGlucoseEntry>,
+    modifier: Modifier = Modifier
+) {
+    if (entries.isEmpty()) {
+        EmptyChartState("No blood glucose data to display")
+        return
+    }
+
+    val sortedEntries = remember(entries) { entries.sortedBy { it.timestamp } }
+    val chartColor = MaterialTheme.colorScheme.tertiary
+    val unit = sortedEntries.lastOrNull()?.unit ?: GlucoseUnit.MG_DL
+
+    val minTimestamp = remember(sortedEntries) { sortedEntries.minOf { it.timestamp } }
+    val msPerDay = 24 * 60 * 60 * 1000L
+
+    val chartEntryModelProducer = remember(sortedEntries) {
+        ChartEntryModelProducer(
+            sortedEntries.map { entry ->
+                val dayOffset = ((entry.timestamp - minTimestamp) / msPerDay).toFloat()
+                entryOf(dayOffset, entry.glucoseLevel.toFloat())
+            }
+        )
+    }
+
+    val lineSpec = remember(chartColor) {
+        listOf(
+            LineChart.LineSpec(
+                lineColor = chartColor.toArgb(),
+                lineBackgroundShader = DynamicShaders.fromBrush(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(
+                            chartColor.copy(alpha = 0.4f),
+                            chartColor.copy(alpha = 0f)
+                        )
+                    )
+                )
+            )
+        )
+    }
+
+    val bottomAxisFormatter = remember(sortedEntries, minTimestamp) {
+        AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+            val timestamp = minTimestamp + (value * msPerDay).toLong()
+            formatDateForAxis(timestamp)
+        }
+    }
+
+    val startAxisFormatter = remember(unit) {
+        AxisValueFormatter<AxisPosition.Vertical.Start> { value, _ ->
+            "%.0f".format(value)
+        }
+    }
+
+    val axisLabelComponent = textComponent(
+        color = MaterialTheme.colorScheme.onSurface,
+        textSize = 9.sp,
+        typeface = Typeface.DEFAULT
+    )
+
+    Column(modifier = modifier) {
+        Chart(
+            chart = lineChart(lines = lineSpec),
+            chartModelProducer = chartEntryModelProducer,
+            startAxis = rememberStartAxis(valueFormatter = startAxisFormatter),
+            bottomAxis = rememberBottomAxis(
+                label = axisLabelComponent,
+                valueFormatter = bottomAxisFormatter,
+                tickLength = 4.dp,
+                itemPlacer = AxisItemPlacer.Horizontal.default(spacing = 3)
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = unit.displayLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun BloodGlucoseSummaryCard(entries: List<BloodGlucoseEntry>) {
+    if (entries.isEmpty()) return
+
+    val latest = entries.maxByOrNull { it.timestamp }
+    val min = entries.minByOrNull { it.glucoseLevel }
+    val max = entries.maxByOrNull { it.glucoseLevel }
+    val avg = entries.map { it.glucoseLevel }.average()
+    val unit = latest?.unit ?: GlucoseUnit.MG_DL
+
+    val format = if (unit == GlucoseUnit.MG_DL) "%.0f" else "%.1f"
+
+    SummaryCard(
+        title = "Blood Glucose Summary",
+        items = listOf(
+            SummaryItem("Latest", latest?.let { "$format ${unit.displayLabel}".format(it.glucoseLevel) } ?: "-"),
+            SummaryItem("Min", min?.let { format.format(it.glucoseLevel) } ?: "-"),
+            SummaryItem("Max", max?.let { format.format(it.glucoseLevel) } ?: "-"),
+            SummaryItem("Avg", format.format(avg))
+        )
     )
 }
 

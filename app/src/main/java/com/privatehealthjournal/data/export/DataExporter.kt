@@ -1,5 +1,6 @@
 package com.privatehealthjournal.data.export
 
+import com.privatehealthjournal.data.entity.BloodGlucoseEntry
 import com.privatehealthjournal.data.entity.BloodPressureEntry
 import com.privatehealthjournal.data.entity.CholesterolEntry
 import com.privatehealthjournal.data.entity.MealWithDetails
@@ -22,7 +23,8 @@ object DataExporter {
         bloodPressureEntries: List<BloodPressureEntry> = emptyList(),
         cholesterolEntries: List<CholesterolEntry> = emptyList(),
         weightEntries: List<WeightEntry> = emptyList(),
-        spO2Entries: List<SpO2Entry> = emptyList()
+        spO2Entries: List<SpO2Entry> = emptyList(),
+        bloodGlucoseEntries: List<BloodGlucoseEntry> = emptyList()
     ): String {
         val exportData = ExportData(
             meals = meals.map { meal ->
@@ -93,6 +95,15 @@ object DataExporter {
                     pulse = spo2.pulse,
                     notes = spo2.notes,
                     timestamp = spo2.timestamp
+                )
+            },
+            bloodGlucoseEntries = bloodGlucoseEntries.map { bg ->
+                ExportedBloodGlucose(
+                    glucoseLevel = bg.glucoseLevel,
+                    unit = bg.unit.name,
+                    mealContext = bg.mealContext?.name,
+                    notes = bg.notes,
+                    timestamp = bg.timestamp
                 )
             }
         )

@@ -1,5 +1,6 @@
 package com.privatehealthjournal.data.repository
 
+import com.privatehealthjournal.data.dao.BloodGlucoseDao
 import com.privatehealthjournal.data.dao.BloodPressureDao
 import com.privatehealthjournal.data.dao.BowelMovementDao
 import com.privatehealthjournal.data.dao.CholesterolDao
@@ -9,6 +10,7 @@ import com.privatehealthjournal.data.dao.OtherEntryDao
 import com.privatehealthjournal.data.dao.SpO2Dao
 import com.privatehealthjournal.data.dao.SymptomEntryDao
 import com.privatehealthjournal.data.dao.WeightDao
+import com.privatehealthjournal.data.entity.BloodGlucoseEntry
 import com.privatehealthjournal.data.entity.BloodPressureEntry
 import com.privatehealthjournal.data.entity.BowelMovementEntry
 import com.privatehealthjournal.data.entity.CholesterolEntry
@@ -32,7 +34,8 @@ class LogRepository(
     private val bloodPressureDao: BloodPressureDao,
     private val cholesterolDao: CholesterolDao,
     private val weightDao: WeightDao,
-    private val spO2Dao: SpO2Dao
+    private val spO2Dao: SpO2Dao,
+    private val bloodGlucoseDao: BloodGlucoseDao
 ) {
     val allMeals: Flow<List<MealWithDetails>> = mealDao.getAllMealsWithDetails()
     val allSymptomEntries: Flow<List<SymptomEntry>> = symptomEntryDao.getAllSymptomEntries()
@@ -46,6 +49,7 @@ class LogRepository(
     val allCholesterolEntries: Flow<List<CholesterolEntry>> = cholesterolDao.getAllCholesterolEntries()
     val allWeightEntries: Flow<List<WeightEntry>> = weightDao.getAllWeightEntries()
     val allSpO2Entries: Flow<List<SpO2Entry>> = spO2Dao.getAllSpO2Entries()
+    val allBloodGlucoseEntries: Flow<List<BloodGlucoseEntry>> = bloodGlucoseDao.getAllBloodGlucoseEntries()
 
     fun getRecentMeals(limit: Int = 5): Flow<List<MealWithDetails>> {
         return mealDao.getRecentMealsWithDetails(limit)
@@ -81,6 +85,10 @@ class LogRepository(
 
     fun getRecentSpO2Entries(limit: Int = 5): Flow<List<SpO2Entry>> {
         return spO2Dao.getRecentSpO2Entries(limit)
+    }
+
+    fun getRecentBloodGlucoseEntries(limit: Int = 5): Flow<List<BloodGlucoseEntry>> {
+        return bloodGlucoseDao.getRecentBloodGlucoseEntries(limit)
     }
 
     suspend fun insertMeal(
@@ -260,5 +268,22 @@ class LogRepository(
 
     suspend fun getSpO2ById(id: Long): SpO2Entry? {
         return spO2Dao.getById(id)
+    }
+
+    // Blood Glucose methods
+    suspend fun insertBloodGlucose(entry: BloodGlucoseEntry): Long {
+        return bloodGlucoseDao.insert(entry)
+    }
+
+    suspend fun updateBloodGlucose(entry: BloodGlucoseEntry) {
+        bloodGlucoseDao.update(entry)
+    }
+
+    suspend fun deleteBloodGlucose(entry: BloodGlucoseEntry) {
+        bloodGlucoseDao.delete(entry)
+    }
+
+    suspend fun getBloodGlucoseById(id: Long): BloodGlucoseEntry? {
+        return bloodGlucoseDao.getById(id)
     }
 }

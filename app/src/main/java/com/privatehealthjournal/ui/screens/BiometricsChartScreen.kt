@@ -38,6 +38,8 @@ import com.privatehealthjournal.ui.components.BloodPressureChart
 import com.privatehealthjournal.ui.components.BloodPressureSummaryCard
 import com.privatehealthjournal.ui.components.CholesterolChart
 import com.privatehealthjournal.ui.components.CholesterolSummaryCard
+import com.privatehealthjournal.ui.components.BloodGlucoseChart
+import com.privatehealthjournal.ui.components.BloodGlucoseSummaryCard
 import com.privatehealthjournal.ui.components.SpO2Chart
 import com.privatehealthjournal.ui.components.SpO2SummaryCard
 import com.privatehealthjournal.ui.components.WeightChart
@@ -50,7 +52,8 @@ enum class BiometricTab(val title: String) {
     WEIGHT("Weight"),
     BLOOD_PRESSURE("Blood Pressure"),
     CHOLESTEROL("Cholesterol"),
-    SPO2("SpO2")
+    SPO2("SpO2"),
+    BLOOD_GLUCOSE("Blood Glucose")
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -66,6 +69,7 @@ fun BiometricsChartScreen(
     val allBloodPressureEntries by viewModel.allBloodPressureEntries.collectAsState()
     val allCholesterolEntries by viewModel.allCholesterolEntries.collectAsState()
     val allSpO2Entries by viewModel.allSpO2Entries.collectAsState()
+    val allBloodGlucoseEntries by viewModel.allBloodGlucoseEntries.collectAsState()
 
     val filteredWeightEntries = remember(allWeightEntries, selectedTimeRange) {
         filterByTimeRange(allWeightEntries, selectedTimeRange) { it.timestamp }
@@ -81,6 +85,10 @@ fun BiometricsChartScreen(
 
     val filteredSpO2Entries = remember(allSpO2Entries, selectedTimeRange) {
         filterByTimeRange(allSpO2Entries, selectedTimeRange) { it.timestamp }
+    }
+
+    val filteredBloodGlucoseEntries = remember(allBloodGlucoseEntries, selectedTimeRange) {
+        filterByTimeRange(allBloodGlucoseEntries, selectedTimeRange) { it.timestamp }
     }
 
     Scaffold(
@@ -168,6 +176,11 @@ fun BiometricsChartScreen(
                         SpO2Chart(entries = filteredSpO2Entries)
                         Spacer(modifier = Modifier.height(16.dp))
                         SpO2SummaryCard(entries = filteredSpO2Entries)
+                    }
+                    BiometricTab.BLOOD_GLUCOSE -> {
+                        BloodGlucoseChart(entries = filteredBloodGlucoseEntries)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        BloodGlucoseSummaryCard(entries = filteredBloodGlucoseEntries)
                     }
                 }
             }

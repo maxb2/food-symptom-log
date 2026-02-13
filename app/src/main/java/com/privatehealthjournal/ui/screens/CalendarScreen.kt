@@ -45,9 +45,11 @@ import com.privatehealthjournal.data.entity.CholesterolEntry
 import com.privatehealthjournal.data.entity.MealWithDetails
 import com.privatehealthjournal.data.entity.MedicationEntry
 import com.privatehealthjournal.data.entity.OtherEntry
+import com.privatehealthjournal.data.entity.BloodGlucoseEntry
 import com.privatehealthjournal.data.entity.SpO2Entry
 import com.privatehealthjournal.data.entity.SymptomEntry
 import com.privatehealthjournal.data.entity.WeightEntry
+import com.privatehealthjournal.ui.components.BloodGlucoseCard
 import com.privatehealthjournal.ui.components.BloodPressureCard
 import com.privatehealthjournal.ui.components.CholesterolCard
 import com.privatehealthjournal.ui.components.MealEntryCard
@@ -77,7 +79,8 @@ fun CalendarScreen(
     onEditBloodPressure: (Long) -> Unit = {},
     onEditCholesterol: (Long) -> Unit = {},
     onEditWeight: (Long) -> Unit = {},
-    onEditSpO2: (Long) -> Unit = {}
+    onEditSpO2: (Long) -> Unit = {},
+    onEditBloodGlucose: (Long) -> Unit = {}
 ) {
     val allMeals by viewModel.allMeals.collectAsState()
     val allSymptoms by viewModel.allSymptomEntries.collectAsState()
@@ -87,6 +90,7 @@ fun CalendarScreen(
     val allCholesterol by viewModel.allCholesterolEntries.collectAsState()
     val allWeight by viewModel.allWeightEntries.collectAsState()
     val allSpO2 by viewModel.allSpO2Entries.collectAsState()
+    val allBloodGlucose by viewModel.allBloodGlucoseEntries.collectAsState()
 
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
@@ -94,7 +98,7 @@ fun CalendarScreen(
     val zone = ZoneId.systemDefault()
 
     // Group entries by date
-    val entriesByDate = remember(allMeals, allSymptoms, allMedications, allOtherEntries, allBloodPressure, allCholesterol, allWeight, allSpO2) {
+    val entriesByDate = remember(allMeals, allSymptoms, allMedications, allOtherEntries, allBloodPressure, allCholesterol, allWeight, allSpO2, allBloodGlucose) {
         val map = mutableMapOf<LocalDate, MutableList<CalendarEntry>>()
 
         allMeals.forEach { meal ->
@@ -129,6 +133,10 @@ fun CalendarScreen(
             val date = Instant.ofEpochMilli(spo2.timestamp).atZone(zone).toLocalDate()
             map.getOrPut(date) { mutableListOf() }.add(CalendarEntry.SpO2(spo2))
         }
+        allBloodGlucose.forEach { bg ->
+            val date = Instant.ofEpochMilli(bg.timestamp).atZone(zone).toLocalDate()
+            map.getOrPut(date) { mutableListOf() }.add(CalendarEntry.BloodGlucose(bg))
+        }
 
         map
     }
@@ -144,6 +152,7 @@ fun CalendarScreen(
                 is CalendarEntry.Cholesterol -> it.entry.timestamp
                 is CalendarEntry.Weight -> it.entry.timestamp
                 is CalendarEntry.SpO2 -> it.entry.timestamp
+                is CalendarEntry.BloodGlucose -> it.entry.timestamp
             }
         }
         ?: emptyList()
@@ -266,6 +275,11 @@ fun CalendarScreen(
                                 entry = entry.entry,
                                 onDelete = { viewModel.deleteSpO2(entry.entry) },
                                 onEdit = { onEditSpO2(entry.entry.id) }
+                            )
+                            is CalendarEntry.BloodGlucose -> BloodGlucoseCard(
+                                entry = entry.entry,
+                                onDelete = { viewModel.deleteBloodGlucose(entry.entry) },
+                                onEdit = { onEditBloodGlucose(entry.entry.id) }
                             )
                         }
                     }
@@ -429,4 +443,5 @@ private sealed class CalendarEntry {
     data class Cholesterol(val entry: CholesterolEntry) : CalendarEntry()
     data class Weight(val entry: WeightEntry) : CalendarEntry()
     data class SpO2(val entry: SpO2Entry) : CalendarEntry()
+    data class BloodGlucose(val entry: BloodGlucoseEntry) : CalendarEntry()
 }

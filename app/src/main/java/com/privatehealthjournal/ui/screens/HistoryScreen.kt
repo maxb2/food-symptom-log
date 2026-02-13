@@ -37,9 +37,11 @@ import com.privatehealthjournal.data.entity.CholesterolEntry
 import com.privatehealthjournal.data.entity.MealWithDetails
 import com.privatehealthjournal.data.entity.MedicationEntry
 import com.privatehealthjournal.data.entity.OtherEntry
+import com.privatehealthjournal.data.entity.BloodGlucoseEntry
 import com.privatehealthjournal.data.entity.SpO2Entry
 import com.privatehealthjournal.data.entity.SymptomEntry
 import com.privatehealthjournal.data.entity.WeightEntry
+import com.privatehealthjournal.ui.components.BloodGlucoseCard
 import com.privatehealthjournal.ui.components.BloodPressureCard
 import com.privatehealthjournal.ui.components.CholesterolCard
 import com.privatehealthjournal.ui.components.MealEntryCard
@@ -70,7 +72,8 @@ fun HistoryScreen(
     onEditBloodPressure: (Long) -> Unit = {},
     onEditCholesterol: (Long) -> Unit = {},
     onEditWeight: (Long) -> Unit = {},
-    onEditSpO2: (Long) -> Unit = {}
+    onEditSpO2: (Long) -> Unit = {},
+    onEditBloodGlucose: (Long) -> Unit = {}
 ) {
     val allMeals by viewModel.allMeals.collectAsState()
     val allSymptoms by viewModel.allSymptomEntries.collectAsState()
@@ -80,6 +83,7 @@ fun HistoryScreen(
     val allCholesterol by viewModel.allCholesterolEntries.collectAsState()
     val allWeight by viewModel.allWeightEntries.collectAsState()
     val allSpO2 by viewModel.allSpO2Entries.collectAsState()
+    val allBloodGlucose by viewModel.allBloodGlucoseEntries.collectAsState()
     var filterType by remember { mutableStateOf(FilterType.ALL) }
 
     Scaffold(
@@ -158,7 +162,8 @@ fun HistoryScreen(
                             allBloodPressure.map { HistoryEntry.BloodPressure(it) } +
                             allCholesterol.map { HistoryEntry.Cholesterol(it) } +
                             allWeight.map { HistoryEntry.Weight(it) } +
-                            allSpO2.map { HistoryEntry.SpO2(it) })
+                            allSpO2.map { HistoryEntry.SpO2(it) } +
+                            allBloodGlucose.map { HistoryEntry.BloodGlucose(it) })
                         .sortedByDescending { it.timestamp }
                 }
                 FilterType.MEALS -> allMeals.map { HistoryEntry.Meal(it) }
@@ -173,7 +178,8 @@ fun HistoryScreen(
                     (allBloodPressure.map { HistoryEntry.BloodPressure(it) } +
                             allCholesterol.map { HistoryEntry.Cholesterol(it) } +
                             allWeight.map { HistoryEntry.Weight(it) } +
-                            allSpO2.map { HistoryEntry.SpO2(it) })
+                            allSpO2.map { HistoryEntry.SpO2(it) } +
+                            allBloodGlucose.map { HistoryEntry.BloodGlucose(it) })
                         .sortedByDescending { it.timestamp }
                 }
             }
@@ -280,6 +286,11 @@ fun HistoryScreen(
                                     onDelete = { viewModel.deleteSpO2(entry.entry) },
                                     onEdit = { onEditSpO2(entry.entry.id) }
                                 )
+                                is HistoryEntry.BloodGlucose -> BloodGlucoseCard(
+                                    entry = entry.entry,
+                                    onDelete = { viewModel.deleteBloodGlucose(entry.entry) },
+                                    onEdit = { onEditBloodGlucose(entry.entry.id) }
+                                )
                             }
                         }
                     }
@@ -321,6 +332,10 @@ private sealed class HistoryEntry {
     }
 
     data class SpO2(val entry: SpO2Entry) : HistoryEntry() {
+        override val timestamp: Long = entry.timestamp
+    }
+
+    data class BloodGlucose(val entry: BloodGlucoseEntry) : HistoryEntry() {
         override val timestamp: Long = entry.timestamp
     }
 }

@@ -1,11 +1,14 @@
 package com.privatehealthjournal.data.export
 
+import com.privatehealthjournal.data.entity.BloodGlucoseEntry
 import com.privatehealthjournal.data.entity.BloodPressureEntry
 import com.privatehealthjournal.data.entity.CholesterolEntry
 import com.privatehealthjournal.data.entity.MealType
 import com.privatehealthjournal.data.entity.MedicationEntry
 import com.privatehealthjournal.data.entity.OtherEntry
 import com.privatehealthjournal.data.entity.OtherEntryType
+import com.privatehealthjournal.data.entity.GlucoseMealContext
+import com.privatehealthjournal.data.entity.GlucoseUnit
 import com.privatehealthjournal.data.entity.SpO2Entry
 import com.privatehealthjournal.data.entity.SymptomEntry
 import com.privatehealthjournal.data.entity.WeightEntry
@@ -30,6 +33,7 @@ object DataImporter {
             var cholesterolImported = 0
             var weightImported = 0
             var spO2Imported = 0
+            var bloodGlucoseImported = 0
 
             // Import meals
             exportData.meals.forEach { meal ->
@@ -154,6 +158,32 @@ object DataImporter {
                 spO2Imported++
             }
 
+            // Import blood glucose entries
+            exportData.bloodGlucoseEntries.forEach { bg ->
+                val unit = try {
+                    GlucoseUnit.valueOf(bg.unit)
+                } catch (e: IllegalArgumentException) {
+                    GlucoseUnit.MG_DL
+                }
+                val mealContext = bg.mealContext?.let {
+                    try {
+                        GlucoseMealContext.valueOf(it)
+                    } catch (e: IllegalArgumentException) {
+                        null
+                    }
+                }
+                repository.insertBloodGlucose(
+                    BloodGlucoseEntry(
+                        glucoseLevel = bg.glucoseLevel,
+                        unit = unit,
+                        mealContext = mealContext,
+                        notes = bg.notes,
+                        timestamp = bg.timestamp
+                    )
+                )
+                bloodGlucoseImported++
+            }
+
             ImportResult.Success(
                 mealsImported = mealsImported,
                 symptomsImported = symptomsImported,
@@ -162,7 +192,8 @@ object DataImporter {
                 bloodPressureImported = bloodPressureImported,
                 cholesterolImported = cholesterolImported,
                 weightImported = weightImported,
-                spO2Imported = spO2Imported
+                spO2Imported = spO2Imported,
+                bloodGlucoseImported = bloodGlucoseImported
             )
         } catch (e: Exception) {
             ImportResult.Error("Failed to import: ${e.message}")
@@ -179,11 +210,13 @@ sealed class ImportResult {
         val bloodPressureImported: Int = 0,
         val cholesterolImported: Int = 0,
         val weightImported: Int = 0,
-        val spO2Imported: Int = 0
+        val spO2Imported: Int = 0,
+        val bloodGlucoseImported: Int = 0
     ) : ImportResult() {
         val totalImported: Int
             get() = mealsImported + symptomsImported + medicationsImported + otherEntriesImported +
-                    bloodPressureImported + cholesterolImported + weightImported + spO2Imported
+                    bloodPressureImported + cholesterolImported + weightImported + spO2Imported +
+                    bloodGlucoseImported
     }
 
     data class Error(val message: String) : ImportResult()
